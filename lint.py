@@ -102,8 +102,7 @@ def diff_header_and_source(header_path: str, source_path: str) -> None:
         print(f"function defintions not in the same order in {header_path} and {source_path}")
         sys.exit(1)
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python list_cpp_functions.py <cpp-or-hpp-file>")
-        sys.exit(1)
-    diff_header_and_source("src/base/fs.h", "src/base/fs.cpp")
+for file_base in [
+    'src/base/fs'
+]:
+    diff_header_and_source(f"{file_base}.h", f"{file_base}.cpp")

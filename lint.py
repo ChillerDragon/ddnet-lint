@@ -3,6 +3,7 @@
 import sys
 import os
 import json
+from typing import Counter
 import clang.cindex
 
 def find_compile_commands(start_dir):
@@ -61,17 +62,16 @@ def parse_command_args(entry, filename):
         cleaned_args.append(arg)
     return cleaned_args
 
-def functions_in_file(filename) -> list[str]:
+def functions_in_file(filename: str) -> list[str]:
     # Load compile_commands.json
     cc, cc_path = load_compile_commands(filename)
     if not cc:
+        print("WARNING! no compile_commands.json found!!!")
         print("Falling back to basic parsing (may fail for headers).")
         args = ['-x', 'c++', '-std=c++17']
     else:
         entry = find_command_for_file(cc, filename)
         args = parse_command_args(entry, filename)
-        print(f"Using compile_commands.json from: {cc_path}")
-        print(f"Clang args: {' '.join(args)}")
 
     index = clang.cindex.Index.create()
     try:
@@ -88,13 +88,20 @@ def functions_in_file(filename) -> list[str]:
     for node in tu.cursor.get_children():
         if node.kind in (clang.cindex.CursorKind.FUNCTION_DECL, clang.cindex.CursorKind.CXX_METHOD):
             if node.location.file and os.path.abspath(node.location.file.name) == os.path.abspath(filename):
-                print(f"{node.spelling} (Line {node.location.line})")
+                # print(f"{node.spelling} (Line {node.location.line})")
                 function_names.append(node.spelling)
     return function_names
+
+def diff_header_and_source(header_path: str, source_path: str) -> None:
+    header_names = functions_in_file(header_path)
+    source_names = functions_in_file(source_path)
+    same_order = Counter(header_names) == Counter(source_names)
+    if not same_order:
+        print(f"function defintions not in the same order in {header_path} and {source_path}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python list_cpp_functions.py <cpp-or-hpp-file>")
         sys.exit(1)
-    names = functions_in_file(sys.argv[1])
-    print(names)
+    diff_header_and_source("src/base/fs.h", "src/base/fs.cpp")

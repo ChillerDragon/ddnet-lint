@@ -61,7 +61,7 @@ def parse_command_args(entry, filename):
         cleaned_args.append(arg)
     return cleaned_args
 
-def list_functions_in_file(filename):
+def functions_in_file(filename) -> list[str]:
     # Load compile_commands.json
     cc, cc_path = load_compile_commands(filename)
     if not cc:
@@ -80,17 +80,21 @@ def list_functions_in_file(filename):
         print(f"Error parsing translation unit: {e}")
         sys.exit(1)
 
-    def visit(node):
+    if not tu.cursor:
+        print("missing cursor")
+        sys.exit(1)
+
+    function_names: list[str] = []
+    for node in tu.cursor.get_children():
         if node.kind in (clang.cindex.CursorKind.FUNCTION_DECL, clang.cindex.CursorKind.CXX_METHOD):
             if node.location.file and os.path.abspath(node.location.file.name) == os.path.abspath(filename):
                 print(f"{node.spelling} (Line {node.location.line})")
-        for child in node.get_children():
-            visit(child)
-
-    visit(tu.cursor)
+                function_names.append(node.spelling)
+    return function_names
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python list_cpp_functions.py <cpp-or-hpp-file>")
         sys.exit(1)
-    list_functions_in_file(sys.argv[1])
+    names = functions_in_file(sys.argv[1])
+    print(names)

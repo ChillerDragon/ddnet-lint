@@ -6,6 +6,7 @@ import json
 from typing import Counter
 import clang.cindex
 
+
 def find_compile_commands(start_dir):
     """Search upwards for compile_commands.json from start_dir."""
     cur = os.path.abspath(start_dir)
@@ -18,6 +19,7 @@ def find_compile_commands(start_dir):
             return None
         cur = parent
 
+
 def load_compile_commands(filename):
     cc_path = find_compile_commands(os.path.dirname(filename))
     if not cc_path:
@@ -26,10 +28,12 @@ def load_compile_commands(filename):
     with open(cc_path) as f:
         return json.load(f), cc_path
 
+
 def find_command_for_file(commands, filename):
     filename_abs = os.path.abspath(filename)
     for entry in commands:
-        entry_file = os.path.abspath(os.path.join(entry['directory'], entry['file']))
+        entry_file = os.path.abspath(
+            os.path.join(entry['directory'], entry['file']))
         if entry_file == filename_abs:
             return entry
     # If not found directly (e.g. header file), pick the first entry that includes the header in its command
@@ -38,6 +42,7 @@ def find_command_for_file(commands, filename):
             return entry
     # As a fallback, return the first entry
     return commands[0] if commands else None
+
 
 def parse_command_args(entry, filename):
     # Extract arguments from "command" or "arguments"
@@ -61,6 +66,7 @@ def parse_command_args(entry, filename):
             continue
         cleaned_args.append(arg)
     return cleaned_args
+
 
 def functions_in_file(filename: str) -> list[str]:
     # Load compile_commands.json
@@ -94,13 +100,16 @@ def functions_in_file(filename: str) -> list[str]:
                 function_names.append(node.spelling)
     return function_names
 
+
 def diff_header_and_source(header_path: str, source_path: str) -> None:
     header_names = functions_in_file(header_path)
     source_names = functions_in_file(source_path)
     same_order = Counter(header_names) == Counter(source_names)
     if not same_order:
-        print(f"function defintions not in the same order in {header_path} and {source_path}")
+        print(
+            f"function defintions not in the same order in {header_path} and {source_path}")
         sys.exit(1)
+
 
 for file_base in [
     'src/base/fs'

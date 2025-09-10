@@ -87,6 +87,8 @@ def functions_in_file(filename: str) -> list[str]:
     function_names: list[str] = []
     for node in tu.cursor.get_children():
         if node.kind in (clang.cindex.CursorKind.FUNCTION_DECL, clang.cindex.CursorKind.CXX_METHOD):
+            if node.is_static_method():
+                continue
             if node.location.file and os.path.abspath(node.location.file.name) == os.path.abspath(filename):
                 # print(f"{node.spelling} (Line {node.location.line})")
                 function_names.append(node.spelling)

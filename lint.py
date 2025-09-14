@@ -28,7 +28,7 @@ def load_compile_commands(filename: str):
         print("Could not find compile_commands.json.")
         return None
     with Path(cc_path).open(encoding="utf-8") as f:
-        return json.load(f), cc_path
+        return json.load(f)
 
 
 def find_command_for_file(commands: list, filename: str):
@@ -71,7 +71,7 @@ def parse_command_args(entry: dict, filename: str):
 
 def functions_in_file(filename: str) -> list[str]:
     # Load compile_commands.json
-    cc, cc_path = load_compile_commands(filename)
+    cc = load_compile_commands(filename)
     if not cc:
         print("WARNING! no compile_commands.json found!!!")
         print("Falling back to basic parsing (may fail for headers).")

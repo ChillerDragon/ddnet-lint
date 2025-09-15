@@ -83,6 +83,7 @@ jobs:
     - name: Build
       run: |
           ls /usr/include/
+          echo /usr/lib/llvm*
           make
 
     - name: Package

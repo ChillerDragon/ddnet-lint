@@ -69,7 +69,8 @@ jobs:
     - name: Install ddnet-lint deps mac
       if: contains(matrix.os, 'macOS')
       run: |
-        brew install llvm
+        brew uninstall llvm || brew remove llvm
+        brew install --with-clang --all-targets --rtti --universal --jit llvm
 
     - name: Install Clang 20
       if: contains(matrix.os, 'ubuntu')

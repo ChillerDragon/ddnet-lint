@@ -6,6 +6,9 @@ enum CXChildVisitResult print_function_names(CXCursor cursor, CXCursor parent, C
 	if (cursor_kind != CXCursor_FunctionDecl && cursor_kind != CXCursor_CXXMethod) {
 		return CXChildVisit_Continue;
 	}
+	if (clang_Cursor_getStorageClass(cursor) == CX_SC_Static) {
+		return CXChildVisit_Continue;
+        }
 
 	CXString name = clang_getCursorSpelling(cursor);
 	printf("%s\n", clang_getCString(name));

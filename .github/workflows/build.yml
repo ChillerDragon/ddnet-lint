@@ -16,16 +16,9 @@ jobs:
       with:
         submodules: true
 
-    - name: Prepare Linux
-      run: |
-        sudo apt-get update -y
-        # mount: /var/lib/grub/esp: special device /dev/disk/by-id/scsi-... does not exist.
-        # sudo apt-get upgrade -y
-        sudo apt-get install pkg-config ninja-build libfreetype6-dev libnotify-dev libsdl2-dev libsqlite3-dev libvulkan-dev glslang-tools spirv-tools libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev libx264-dev libpng-dev valgrind gcovr libglew-dev -y
-
     - name: Install ddnet-lint deps linux
       run: |
-          sudo apt-get install -y libclang-dev make
+          sudo apt-get install -y make build-essential
 
     - name: Install Clang 20
       run: |

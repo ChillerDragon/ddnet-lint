@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +8,7 @@
 
 typedef struct {
 	char functions[2048][512];
-	size_t num_functions;
+	int num_functions;
 } DDNetLintCtx;
 
 void ddl_push_func(DDNetLintCtx *ctx, const char *funcname) {
@@ -15,7 +16,7 @@ void ddl_push_func(DDNetLintCtx *ctx, const char *funcname) {
 }
 
 void ddl_print_funcs(DDNetLintCtx *ctx) {
-	for(int i = 0; i < ctx->num_functions; i++) {
+	for(int i = 0; i < ctx->num_functions - 1; i++) {
 		puts(ctx->functions[i]);
 	}
 }
@@ -70,7 +71,7 @@ int main(int argc, const char **argv) {
 	const char *const *command_line_args = argv + 2;
 	int num_command_line_args = argc - 2;
 
-	DDNetLintCtx ctx;
+	DDNetLintCtx ctx = {};
 	ddl_get_funcs(source_filename, command_line_args, num_command_line_args, &ctx);
 	ddl_print_funcs(&ctx);
 

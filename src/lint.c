@@ -3,7 +3,7 @@
 
 enum CXChildVisitResult print_function_names(CXCursor cursor, CXCursor parent, CXClientData client_data) {
 	enum CXCursorKind cursor_kind = clang_getCursorKind(cursor);
-	if (cursor_kind != CXCursor_FunctionDecl || cursor_kind != CXCursor_CXXMethod) {
+	if (cursor_kind != CXCursor_FunctionDecl && cursor_kind != CXCursor_CXXMethod) {
 		return CXChildVisit_Continue;
 	}
 

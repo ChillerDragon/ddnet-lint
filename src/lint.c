@@ -17,8 +17,8 @@ void ddl_push_func(DDNetLintCtx *ctx, const char *funcname) {
 }
 
 void ddl_print_funcs(DDNetLintCtx *ctx) {
-	for(int i = 0; i < ctx->num_functions - 1; i++) {
-		puts(ctx->functions[i]);
+	for(int i = 0; i < ctx->num_functions; i++) {
+		printf(" %s\n", ctx->functions[i]);
 	}
 }
 
@@ -45,10 +45,9 @@ bool ddl_has_same_func_order(DDNetLintCtx *ctx_header, DDNetLintCtx *ctx_source)
 	}
 
 	if(!same_amount) {
-		i++;
 		const char *header_name = ctx_header->functions[i];
-		const char *source_name = ctx_header->functions[i];
-		fprintf(stderr, "Error missing function! Header file: %s, Source file: %s\n", header_name, source_name);
+		const char *source_name = ctx_source->functions[i];
+		fprintf(stderr, "Error missing function! At offset %d Header file: %s, Source file: %s\n", i, header_name, source_name);
 		return false;
 	}
 
@@ -97,10 +96,12 @@ void ddl_check_src_and_header(const char *header_filename, const char *source_fi
 	DDNetLintCtx ctx_header = {};
 
 	ddl_get_funcs(header_filename, command_line_args, num_command_line_args, &ctx_header);
-	ddl_print_funcs(&ctx_header);
-
 	ddl_get_funcs(source_filename, command_line_args, num_command_line_args, &ctx_source);
-	ddl_print_funcs(&ctx_source);
+
+	// printf("funcs in %s\n", header_filename);
+	// ddl_print_funcs(&ctx_header);
+	// printf("funcs in %s\n", source_filename);
+	// ddl_print_funcs(&ctx_source);
 
 	if(!ddl_has_same_func_order(&ctx_header, &ctx_source)) {
 		fprintf(stderr, "Error files %s and %s do not have the same function order.\n", header_filename, source_filename);

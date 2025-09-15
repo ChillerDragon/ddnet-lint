@@ -1,0 +1,98 @@
+name: Build
+
+on:
+  push:
+    branches-ignore:
+      - gh-readonly-queue/**
+  pull_request:
+  merge_group:
+
+jobs:
+  build-cmake:
+    runs-on: ${{ matrix.os }}
+    env:
+      CARGO_HTTP_MULTIPLEXING: false
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [ubuntu-latest, macOS-latest, windows-latest, ubuntu-22.04, windows-latest-mingw]
+        include:
+        - name: ubuntu-latest
+          os: ubuntu-latest
+          cmake-args: -G Ninja
+          cmake-init-env: CXXFLAGS=-Werror
+          package-file: "*-linux_x86_64.tar.xz"
+          fancy: true
+        - name: ubuntu-22.04
+          os: ubuntu-22.04
+          cmake-path: /usr/bin/
+          cmake-args: -G Ninja -DTEST_MYSQL=ON
+          cmake-init-env: CXXFLAGS=-Werror
+          gtest-env: GTEST_FILTER=-*SQLite*
+          package-file: "*-linux_x86_64.tar.xz"
+          fancy: false
+        - name: macOS-latest
+          os: macOS-latest
+          cmake-args: -G Ninja
+          cmake-init-env: CXXFLAGS=-Werror
+          package-file: "*-macos.dmg"
+          fancy: false
+        - name: windows-latest
+          os: windows-latest
+          cmake-args: -A x64 -DEXCEPTION_HANDLING=ON
+          cmake-init-env: CXXFLAGS=/WX LDFLAGS=/WX
+          package-file: "*-win64.zip"
+          fancy: false
+        - name: windows-latest-mingw
+          os: windows-latest
+          cmake-args: -G Ninja -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DEXCEPTION_HANDLING=ON -DCMAKE_RC_COMPILER=windres -DCMAKE_AR=ar
+          cmake-init-env: CXXFLAGS=-Werror LDFLAGS=-Werror
+          package-file: "*-win64.zip"
+          fancy: false
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Prepare Linux
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get update -y
+        # mount: /var/lib/grub/esp: special device /dev/disk/by-id/scsi-... does not exist.
+        # sudo apt-get upgrade -y
+        sudo apt-get install pkg-config ninja-build libfreetype6-dev libnotify-dev libsdl2-dev libsqlite3-dev libvulkan-dev glslang-tools spirv-tools libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev libx264-dev libpng-dev valgrind gcovr libglew-dev -y
+
+    - name: Prepare macOS
+      if: contains(matrix.os, 'macOS')
+      run: |
+        brew update || true
+        brew install pkg-config sdl2 ffmpeg ninja molten-vk vulkan-headers glslang spirv-tools rust || true
+        brew upgrade freetype
+        pip3 install --break-system-packages dmgbuild
+        echo /Library/Frameworks/Python.framework/Versions/3.12/bin >> $GITHUB_PATH
+        sudo rm -rf /Library/Developer/CommandLineTools
+
+    - name: Prepare Windows MinGW
+      if: contains(matrix.os, 'windows') && contains(matrix.name, 'mingw')
+      run: |
+        rustup toolchain install stable-x86_64-pc-windows-gnu
+        rustup target add x86_64-pc-windows-gnu
+        rustup default stable-x86_64-pc-windows-gnu
+        rustup set default-host x86_64-pc-windows-gnu
+
+    - name: Build
+      run: |
+          make
+
+    - name: Package
+      run: |
+        zip -r ddnet_lint.zip ddnet_lin*
+        mkdir artifacts
+        mv ddnet_lint.zip artifacts
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ddnet-${{ matrix.name }}
+        path: artifacts

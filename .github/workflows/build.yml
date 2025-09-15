@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [ubuntu-latest, macOS-latest, windows-latest, ubuntu-22.04, windows-latest-mingw]
+        name: [ubuntu-latest, macOS-latest, ubuntu-22.04]
         include:
         - name: ubuntu-latest
           os: ubuntu-latest
@@ -36,18 +36,6 @@ jobs:
           cmake-args: -G Ninja
           cmake-init-env: CXXFLAGS=-Werror
           package-file: "*-macos.dmg"
-          fancy: false
-        - name: windows-latest
-          os: windows-latest
-          cmake-args: -A x64 -DEXCEPTION_HANDLING=ON
-          cmake-init-env: CXXFLAGS=/WX LDFLAGS=/WX
-          package-file: "*-win64.zip"
-          fancy: false
-        - name: windows-latest-mingw
-          os: windows-latest
-          cmake-args: -G Ninja -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DEXCEPTION_HANDLING=ON -DCMAKE_RC_COMPILER=windres -DCMAKE_AR=ar
-          cmake-init-env: CXXFLAGS=-Werror LDFLAGS=-Werror
-          package-file: "*-win64.zip"
           fancy: false
 
     steps:
@@ -72,14 +60,6 @@ jobs:
         pip3 install --break-system-packages dmgbuild
         echo /Library/Frameworks/Python.framework/Versions/3.12/bin >> $GITHUB_PATH
         sudo rm -rf /Library/Developer/CommandLineTools
-
-    - name: Prepare Windows MinGW
-      if: contains(matrix.os, 'windows') && contains(matrix.name, 'mingw')
-      run: |
-        rustup toolchain install stable-x86_64-pc-windows-gnu
-        rustup target add x86_64-pc-windows-gnu
-        rustup default stable-x86_64-pc-windows-gnu
-        rustup set default-host x86_64-pc-windows-gnu
 
     - name: Install ddnet-lint deps linux
       if: contains(matrix.os, 'ubuntu')

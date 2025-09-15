@@ -95,12 +95,12 @@ void ddl_get_funcs(const char *source_filename, const char *const *command_line_
 void ddl_check_src_and_header(const char *header_filename, const char *source_filename, const char *const *command_line_args, int num_command_line_args) {
 	DDNetLintCtx ctx_source = {};
 	DDNetLintCtx ctx_header = {};
-	DDNetLintCtx *contexts[] = {&ctx_header, &ctx_source};
-	for(int i = 0; i < sizeof(contexts) / sizeof(DDNetLintCtx *); i++) {
-		DDNetLintCtx *ctx = contexts[i];
-		ddl_get_funcs(source_filename, command_line_args, num_command_line_args, ctx);
-		// ddl_print_funcs(ctx);
-	}
+
+	ddl_get_funcs(header_filename, command_line_args, num_command_line_args, &ctx_header);
+	ddl_print_funcs(&ctx_header);
+
+	ddl_get_funcs(source_filename, command_line_args, num_command_line_args, &ctx_source);
+	ddl_print_funcs(&ctx_source);
 
 	if(!ddl_has_same_func_order(&ctx_header, &ctx_source)) {
 		fprintf(stderr, "Error files %s and %s do not have the same function order.\n", header_filename, source_filename);
@@ -109,17 +109,16 @@ void ddl_check_src_and_header(const char *header_filename, const char *source_fi
 }
 
 int main(int argc, const char **argv) {
-	if (argc < 2) {
+	if (argc < 1) {
 		printf("Usage: %s [clang_args...]\n", argv[0]);
 		return 1;
 	}
 
 	const char *const *command_line_args = argv + 1;
 	int num_command_line_args = argc - 1;
-
 	const char *header_filename = "src/base/str.h";
 	const char *source_filename = "src/base/str.cpp";
 	ddl_check_src_and_header(source_filename, header_filename, command_line_args, num_command_line_args);
-
+	puts("OK");
 	return 0;
 }

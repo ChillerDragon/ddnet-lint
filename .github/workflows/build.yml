@@ -81,6 +81,11 @@ jobs:
         rustup default stable-x86_64-pc-windows-gnu
         rustup set default-host x86_64-pc-windows-gnu
 
+    - name: Install ddnet-lint deps linux
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+          sudo apt-get install -y libclang-dev make
+
     - name: Build
       run: |
           make

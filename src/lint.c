@@ -1,5 +1,24 @@
-#include <clang-c/Index.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <clang-c/CXString.h>
+#include <clang-c/Index.h>
+
+typedef struct {
+	char functions[2048][512];
+	size_t num_functions;
+} DDNetLintCtx;
+
+void ddl_push_func(DDNetLintCtx *ctx, const char *funcname) {
+	strncpy(ctx->functions[ctx->num_functions++], funcname, sizeof(ctx->functions[0]));
+}
+
+void ddl_print_funcs(DDNetLintCtx *ctx) {
+	for(int i = 0; i < ctx->num_functions; i++) {
+		puts(ctx->functions[i]);
+	}
+}
 
 enum CXChildVisitResult print_function_names(CXCursor cursor, CXCursor parent, CXClientData client_data) {
 	enum CXCursorKind cursor_kind = clang_getCursorKind(cursor);
@@ -11,9 +30,34 @@ enum CXChildVisitResult print_function_names(CXCursor cursor, CXCursor parent, C
         }
 
 	CXString name = clang_getCursorSpelling(cursor);
-	printf("%s\n", clang_getCString(name));
+	// printf("%s\n", clang_getCString(name));
+
+	DDNetLintCtx *ctx = client_data;
+	ddl_push_func(ctx, clang_getCString(name));
+
 	clang_disposeString(name);
 	return CXChildVisit_Continue;
+}
+
+void ddl_get_funcs(const char *source_filename, const char *const *command_line_args, int num_command_line_args, DDNetLintCtx *ctx) {
+	CXIndex index = clang_createIndex(0, 0);
+	CXTranslationUnit unit = clang_parseTranslationUnit(
+		index,
+		source_filename,
+		command_line_args,
+		num_command_line_args,
+		NULL, 0,
+		CXTranslationUnit_None);
+
+	if (unit == NULL) {
+		fprintf(stderr, "Error unable to parse translation unit: %s\n", source_filename);
+		exit(1);
+	}
+
+	CXCursor cursor = clang_getTranslationUnitCursor(unit);
+	clang_visitChildren(cursor, print_function_names, ctx);
+	clang_disposeTranslationUnit(unit);
+	clang_disposeIndex(index);
 }
 
 int main(int argc, const char **argv) {
@@ -22,24 +66,13 @@ int main(int argc, const char **argv) {
 		return 1;
 	}
 
-	CXIndex index = clang_createIndex(0, 0);
-	CXTranslationUnit unit = clang_parseTranslationUnit(
-		index,
-		argv[1],
-		argv + 2,
-		argc - 2,
-		NULL, 0,
-		CXTranslationUnit_None);
+	const char *source_filename = argv[1];
+	const char *const *command_line_args = argv + 2;
+	int num_command_line_args = argc - 2;
 
-	if (unit == NULL) {
-		fprintf(stderr, "Unable to parse translation unit. Quitting.\n");
-		return 2;
-	}
+	DDNetLintCtx ctx;
+	ddl_get_funcs(source_filename, command_line_args, num_command_line_args, &ctx);
+	ddl_print_funcs(&ctx);
 
-	CXCursor cursor = clang_getTranslationUnitCursor(unit);
-	clang_visitChildren(cursor, print_function_names, NULL);
-
-	clang_disposeTranslationUnit(unit);
-	clang_disposeIndex(index);
 	return 0;
 }

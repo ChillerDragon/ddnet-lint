@@ -24,17 +24,10 @@ jobs:
         sudo apt-get install pkg-config ninja-build libfreetype6-dev libnotify-dev libsdl2-dev libsqlite3-dev libvulkan-dev glslang-tools spirv-tools libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev libx264-dev libpng-dev valgrind gcovr libglew-dev -y
 
     - name: Install ddnet-lint deps linux
-      if: contains(matrix.os, 'ubuntu')
       run: |
           sudo apt-get install -y libclang-dev make
 
-    - name: Install ddnet-lint deps mac
-      if: contains(matrix.os, 'macOS')
-      run: |
-        brew reinstall --with-clang --all-targets --rtti --universal --jit llvm
-
     - name: Install Clang 20
-      if: contains(matrix.os, 'ubuntu')
       run: |
         sudo apt-get update
         sudo apt-get install -y wget gnupg lsb-release

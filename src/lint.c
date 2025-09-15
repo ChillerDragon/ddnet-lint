@@ -2,12 +2,14 @@
 #include <stdio.h>
 
 enum CXChildVisitResult print_function_names(CXCursor cursor, CXCursor parent, CXClientData client_data) {
-	if (clang_getCursorKind(cursor) == CXCursor_FunctionDecl ||
-		clang_getCursorKind(cursor) == CXCursor_CXXMethod) {
-		CXString name = clang_getCursorSpelling(cursor);
-		printf("%s\n", clang_getCString(name));
-		clang_disposeString(name);
+	enum CXCursorKind cursor_kind = clang_getCursorKind(cursor);
+	if (cursor_kind != CXCursor_FunctionDecl || cursor_kind != CXCursor_CXXMethod) {
+		return CXChildVisit_Continue;
 	}
+
+	CXString name = clang_getCursorSpelling(cursor);
+	printf("%s\n", clang_getCString(name));
+	clang_disposeString(name);
 	return CXChildVisit_Continue;
 }
 

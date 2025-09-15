@@ -116,8 +116,8 @@ int main(int argc, const char **argv) {
 
 	const char *const *command_line_args = argv + 1;
 	int num_command_line_args = argc - 1;
-	const char *header_filename = "src/base/str.h";
-	const char *source_filename = "src/base/str.cpp";
+	const char *header_filename = "src/base/fs.h";
+	const char *source_filename = "src/base/fs.cpp";
 	ddl_check_src_and_header(source_filename, header_filename, command_line_args, num_command_line_args);
 	puts("OK");
 	return 0;

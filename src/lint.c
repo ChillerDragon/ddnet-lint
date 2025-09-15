@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <clang-c/CXString.h>
 #include <clang-c/Index.h>
@@ -21,7 +22,40 @@ void ddl_print_funcs(DDNetLintCtx *ctx) {
 	}
 }
 
-enum CXChildVisitResult print_function_names(CXCursor cursor, CXCursor parent, CXClientData client_data) {
+int min(int a, int b) {
+	return a < b ? a : b;
+}
+
+bool ddl_has_same_func_order(DDNetLintCtx *ctx_header, DDNetLintCtx *ctx_source) {
+	bool same_amount = true;
+	if(ctx_header->num_functions != ctx_source->num_functions) {
+		fprintf(stderr, "Error header has %d functions while source has %d\n", ctx_header->num_functions, ctx_source->num_functions);
+		same_amount = false;
+	}
+
+	int num_functions = min(ctx_header->num_functions, ctx_source->num_functions);
+	int i;
+	for(i = 0; i < num_functions; i++) {
+		if(strncmp(ctx_header->functions[i], ctx_source->functions[i], sizeof(ctx_source->functions[i])) == 0) {
+			continue;
+		}
+
+		fprintf(stderr, "Error wrong order! The %d function in the header is %s and in the source file it is %s\n", i, ctx_header->functions[i], ctx_source->functions[i]);
+		return false;
+	}
+
+	if(!same_amount) {
+		i++;
+		const char *header_name = ctx_header->functions[i];
+		const char *source_name = ctx_header->functions[i];
+		fprintf(stderr, "Error missing function! Header file: %s, Source file: %s\n", header_name, source_name);
+		return false;
+	}
+
+	return true;
+}
+
+enum CXChildVisitResult fetch_func_callback(CXCursor cursor, CXCursor parent, CXClientData client_data) {
 	enum CXCursorKind cursor_kind = clang_getCursorKind(cursor);
 	if (cursor_kind != CXCursor_FunctionDecl && cursor_kind != CXCursor_CXXMethod) {
 		return CXChildVisit_Continue;
@@ -31,11 +65,8 @@ enum CXChildVisitResult print_function_names(CXCursor cursor, CXCursor parent, C
         }
 
 	CXString name = clang_getCursorSpelling(cursor);
-	// printf("%s\n", clang_getCString(name));
-
 	DDNetLintCtx *ctx = client_data;
 	ddl_push_func(ctx, clang_getCString(name));
-
 	clang_disposeString(name);
 	return CXChildVisit_Continue;
 }
@@ -56,24 +87,39 @@ void ddl_get_funcs(const char *source_filename, const char *const *command_line_
 	}
 
 	CXCursor cursor = clang_getTranslationUnitCursor(unit);
-	clang_visitChildren(cursor, print_function_names, ctx);
+	clang_visitChildren(cursor, fetch_func_callback, ctx);
 	clang_disposeTranslationUnit(unit);
 	clang_disposeIndex(index);
 }
 
+void ddl_check_src_and_header(const char *header_filename, const char *source_filename, const char *const *command_line_args, int num_command_line_args) {
+	DDNetLintCtx ctx_source = {};
+	DDNetLintCtx ctx_header = {};
+	DDNetLintCtx *contexts[] = {&ctx_header, &ctx_source};
+	for(int i = 0; i < sizeof(contexts) / sizeof(DDNetLintCtx *); i++) {
+		DDNetLintCtx *ctx = contexts[i];
+		ddl_get_funcs(source_filename, command_line_args, num_command_line_args, ctx);
+		// ddl_print_funcs(ctx);
+	}
+
+	if(!ddl_has_same_func_order(&ctx_header, &ctx_source)) {
+		fprintf(stderr, "Error files %s and %s do not have the same function order.\n", header_filename, source_filename);
+		exit(1);
+	}
+}
+
 int main(int argc, const char **argv) {
 	if (argc < 2) {
-		printf("Usage: %s <source-file.cpp> [clang_args...]\n", argv[0]);
+		printf("Usage: %s [clang_args...]\n", argv[0]);
 		return 1;
 	}
 
-	const char *source_filename = argv[1];
-	const char *const *command_line_args = argv + 2;
-	int num_command_line_args = argc - 2;
+	const char *const *command_line_args = argv + 1;
+	int num_command_line_args = argc - 1;
 
-	DDNetLintCtx ctx = {};
-	ddl_get_funcs(source_filename, command_line_args, num_command_line_args, &ctx);
-	ddl_print_funcs(&ctx);
+	const char *header_filename = "src/base/str.h";
+	const char *source_filename = "src/base/str.cpp";
+	ddl_check_src_and_header(source_filename, header_filename, command_line_args, num_command_line_args);
 
 	return 0;
 }

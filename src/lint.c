@@ -117,9 +117,21 @@ int main(int argc, const char **argv) {
 
 	const char *const *command_line_args = argv + 1;
 	int num_command_line_args = argc - 1;
-	const char *header_filename = "src/base/fs.h";
-	const char *source_filename = "src/base/fs.cpp";
-	ddl_check_src_and_header(source_filename, header_filename, command_line_args, num_command_line_args);
+
+	const char *filenames[] = {
+		"src/base/str",
+		"src/base/fs"
+	};
+
+	for(int i = 0; i < sizeof(filenames) / sizeof(const char *); i++) {
+		const char *base_filename = filenames[i];
+		char source_filename[512];
+		char header_filename[512];
+		snprintf(header_filename, sizeof(header_filename), "%s.h", base_filename);
+		snprintf(source_filename, sizeof(source_filename), "%s.cpp", base_filename);
+		ddl_check_src_and_header(source_filename, header_filename, command_line_args, num_command_line_args);
+	}
+
 	puts("OK");
 	return 0;
 }

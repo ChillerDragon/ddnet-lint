@@ -82,6 +82,7 @@ jobs:
 
     - name: Build
       run: |
+          ls /usr/include/clan*
           make
 
     - name: Package

@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include <clang-c/CXString.h>
 #include <clang-c/Index.h>
 
 typedef struct {

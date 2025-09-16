@@ -3,8 +3,6 @@ project(ddnet_lint C)
 
 set(CMAKE_C_STANDARD 99)
 
-find_package(Clang QUIET)
-
 set(SOURCES
 	src/base/math.c
 	src/base/math.h

@@ -20,5 +20,7 @@ add_executable(ddnet_lint ${SOURCES})
 target_include_directories(ddnet_lint PRIVATE src)
 
 # TODO: use proper cmake find thingy to also support windows and shits
+target_include_directories(ddnet_lint PRIVATE /usr/lib/llvm-20/include/)
+target_link_directories(ddnet_lint /usr/lib/llvm-20/lib/)
 target_link_options(ddnet_lint PRIVATE -lclang)
 

@@ -1,7 +1,10 @@
 #include <clang-c/Index.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <base/str.h>
 
 char* ddl_read_line(const char* filename, unsigned line_num) {
 	FILE* file = fopen(filename, "r");
@@ -20,6 +23,11 @@ char* ddl_read_line(const char* filename, unsigned line_num) {
 	free(buffer);
 	return NULL;
 }
+
+typedef struct {
+	CXTranslationUnit translation_unit;
+	int num_offenses;
+} DDNetLintFloatCtx;
 
 enum CXChildVisitResult ddl_float_callback(CXCursor cursor, CXCursor parent, CXClientData client_data) {
 	CXSourceLocation location = clang_getCursorLocation(cursor);
@@ -40,13 +48,20 @@ enum CXChildVisitResult ddl_float_callback(CXCursor cursor, CXCursor parent, CXC
 		// Get float literal string
 		CXToken* tokens = NULL;
 		unsigned int numTokens = 0;
-		CXTranslationUnit tu = (CXTranslationUnit)client_data;
+		DDNetLintFloatCtx *ctx = client_data;
+		CXTranslationUnit tu = ctx->translation_unit;
 		CXSourceRange range = clang_getCursorExtent(cursor);
 		clang_tokenize(tu, range, &tokens, &numTokens);
 
 		for (unsigned int i = 0; i < numTokens; i++) {
 			CXString spelling = clang_getTokenSpelling(tu, tokens[i]);
-			printf("Float literal: %s at %s:%u\n", clang_getCString(spelling), file_name, line);
+
+			if(!str_endswith(clang_getCString(spelling), ".f")) {
+				continue;
+			}
+
+			ctx->num_offenses++;
+			printf("Float literal style violation: %s at %s:%u\n", clang_getCString(spelling), file_name, line);
 			if (code_line) {
 				printf("    Code line: %s", code_line);
 				if (code_line[strlen(code_line)-1] != '\n') printf("\n");
@@ -60,7 +75,7 @@ enum CXChildVisitResult ddl_float_callback(CXCursor cursor, CXCursor parent, CXC
 	return CXChildVisit_Recurse;
 }
 
-void ddl_check_floats(const char *source_filename) {
+bool ddl_check_floats(const char *source_filename) {
 	CXIndex index = clang_createIndex(0, 0);
 	CXTranslationUnit tu = clang_parseTranslationUnit(
 		index, source_filename, NULL, 0, NULL, 0, CXTranslationUnit_None);
@@ -71,8 +86,17 @@ void ddl_check_floats(const char *source_filename) {
 	}
 
 	CXCursor rootCursor = clang_getTranslationUnitCursor(tu);
-	clang_visitChildren(rootCursor, ddl_float_callback, tu);
+	DDNetLintFloatCtx ctx = {
+		.translation_unit = tu,
+	};
+	clang_visitChildren(rootCursor, ddl_float_callback, &ctx);
 
 	clang_disposeTranslationUnit(tu);
 	clang_disposeIndex(index);
+
+	if(ctx.num_offenses) {
+		fprintf(stderr, "Error got %d float style offenses!\n", ctx.num_offenses);
+	}
+
+	return ctx.num_offenses == 0;
 }

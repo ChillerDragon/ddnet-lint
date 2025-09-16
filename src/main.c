@@ -1,4 +1,5 @@
 #include <checks/func_order.h>
+#include <checks/floats.h>
 #include <stdio.h>
 
 int main(int argc, const char **argv) {
@@ -22,6 +23,9 @@ int main(int argc, const char **argv) {
 		snprintf(header_filename, sizeof(header_filename), "%s.h", base_filename);
 		snprintf(source_filename, sizeof(source_filename), "%s.cpp", base_filename);
 		ddl_check_src_and_header(source_filename, header_filename, command_line_args, num_command_line_args);
+
+		ddl_check_floats(source_filename);
+		ddl_check_floats(header_filename);
 	}
 
 	puts("OK");

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char* read_line(const char* filename, unsigned line_num) {
+char* ddl_read_line(const char* filename, unsigned line_num) {
 	FILE* file = fopen(filename, "r");
 	if (!file) return NULL;
 	size_t bufsize = 4096;
@@ -21,7 +21,7 @@ char* read_line(const char* filename, unsigned line_num) {
 	return NULL;
 }
 
-enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
+enum CXChildVisitResult ddl_float_callback(CXCursor cursor, CXCursor parent, CXClientData client_data) {
 	CXSourceLocation location = clang_getCursorLocation(cursor);
 	if (!clang_Location_isFromMainFile(location))
 		return CXChildVisit_Recurse;
@@ -35,7 +35,7 @@ enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData c
 		const char* file_name = clang_getCString(file_name_cx);
 
 		// Read the line from the file
-		char* code_line = read_line(file_name, line);
+		char* code_line = ddl_read_line(file_name, line);
 
 		// Get float literal string
 		CXToken* tokens = NULL;
@@ -71,7 +71,7 @@ void ddl_check_floats(const char *source_filename) {
 	}
 
 	CXCursor rootCursor = clang_getTranslationUnitCursor(tu);
-	clang_visitChildren(rootCursor, visitor, tu);
+	clang_visitChildren(rootCursor, ddl_float_callback, tu);
 
 	clang_disposeTranslationUnit(tu);
 	clang_disposeIndex(index);

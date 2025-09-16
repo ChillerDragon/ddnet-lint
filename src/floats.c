@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Reads a specific line from a file (1-indexed)
 char* read_line(const char* filename, unsigned line_num) {
 	FILE* file = fopen(filename, "r");
 	if (!file) return NULL;
@@ -22,7 +21,6 @@ char* read_line(const char* filename, unsigned line_num) {
 	return NULL;
 }
 
-// Callback for visiting AST nodes
 enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
 	CXSourceLocation location = clang_getCursorLocation(cursor);
 	if (!clang_Location_isFromMainFile(location))
@@ -62,28 +60,32 @@ enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData c
 	return CXChildVisit_Recurse;
 }
 
-int main(int argc, char** argv) {
-	if (argc < 2) {
-		fprintf(stderr, "Usage: %s file.cpp\n", argv[0]);
-		return 1;
-	}
-
+void ddl_check_floats(const char *source_filename) {
 	CXIndex index = clang_createIndex(0, 0);
 	CXTranslationUnit tu = clang_parseTranslationUnit(
-		index, argv[1], NULL, 0, NULL, 0, CXTranslationUnit_None);
+		index, source_filename, NULL, 0, NULL, 0, CXTranslationUnit_None);
 
 	if (tu == NULL) {
-		fprintf(stderr, "Failed to parse translation unit\n");
-		return 1;
+		fprintf(stderr, "Failed to parse translation unit: %s\n", source_filename);
+		exit(1);
 	}
-
-	float foo = 4.20f;
-	float bar = 4.2f;
 
 	CXCursor rootCursor = clang_getTranslationUnitCursor(tu);
 	clang_visitChildren(rootCursor, visitor, tu);
 
 	clang_disposeTranslationUnit(tu);
 	clang_disposeIndex(index);
+}
+
+int main(int argc, char** argv) {
+	if (argc < 2) {
+		fprintf(stderr, "Usage: %s file.cpp\n", argv[0]);
+		return 1;
+	}
+	ddl_check_floats(argv[1]);
+
+	float foo = 4.20f;
+	float bar = 4.2f;
+
 	return 0;
 }

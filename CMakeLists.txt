@@ -1,22 +1,24 @@
 cmake_minimum_required(VERSION 3.5)
-project(print_floats_libclang C)
+project(ddnet_lint C)
 
 set(CMAKE_C_STANDARD 99)
 
 find_package(Clang QUIET)
 
-if (Clang_FOUND)
-    message(STATUS "Found Clang via CMake: ${Clang_INCLUDE_DIRS}")
-    include_directories(${Clang_INCLUDE_DIRS})
-    link_libraries(${Clang_LIBRARIES})
-    add_executable(print_floats_libclang print_floats_with_lines_libclang.c)
-    target_link_libraries(print_floats_libclang ${Clang_LIBRARIES})
-else()
-    # Fallback: try pkg-config
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(LIBCLANG REQUIRED libclang)
-    include_directories(${LIBCLANG_INCLUDE_DIRS})
-    link_directories(${LIBCLANG_LIBRARY_DIRS})
-    add_executable(print_floats_libclang print_floats_with_lines_libclang.c)
-    target_link_libraries(print_floats_libclang ${LIBCLANG_LIBRARIES})
-endif()
+set(SOURCES
+	src/base/math.c
+	src/base/math.h
+	src/base/str.c
+	src/base/str.h
+	src/base/detect.h
+	src/checks/floats.c
+	src/checks/floats.h
+	src/checks/func_order.c
+	src/checks/func_order.h
+	src/main.c
+)
+
+add_executable(ddnet_lint ${SOURCES})
+target_include_directories(ddnet_lint PRIVATE src)
+target_link_options(ddnet_lint PRIVATE -lclang)
+

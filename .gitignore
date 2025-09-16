@@ -4,3 +4,4 @@ __pycache__
 *.pyc
 ddnet_lint
 floats
+compile_commands.json

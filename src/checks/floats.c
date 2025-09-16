@@ -76,16 +76,3 @@ void ddl_check_floats(const char *source_filename) {
 	clang_disposeTranslationUnit(tu);
 	clang_disposeIndex(index);
 }
-
-int main(int argc, char** argv) {
-	if (argc < 2) {
-		fprintf(stderr, "Usage: %s file.cpp\n", argv[0]);
-		return 1;
-	}
-	ddl_check_floats(argv[1]);
-
-	float foo = 4.20f;
-	float bar = 4.2f;
-
-	return 0;
-}

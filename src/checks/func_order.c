@@ -6,10 +6,10 @@
 
 #include <clang-c/Index.h>
 
-typedef struct {
-	char functions[2048][512];
-	int num_functions;
-} DDNetLintCtx;
+#include "func_order.h"
+
+#include <base/math.h>
+
 
 void ddl_push_func(DDNetLintCtx *ctx, const char *funcname) {
 	strncpy(ctx->functions[ctx->num_functions++], funcname, sizeof(ctx->functions[0]));
@@ -19,10 +19,6 @@ void ddl_print_funcs(DDNetLintCtx *ctx) {
 	for(int i = 0; i < ctx->num_functions; i++) {
 		printf(" %s\n", ctx->functions[i]);
 	}
-}
-
-int min(int a, int b) {
-	return a < b ? a : b;
 }
 
 bool ddl_has_same_func_order(DDNetLintCtx *ctx_header, DDNetLintCtx *ctx_source) {
@@ -108,29 +104,3 @@ void ddl_check_src_and_header(const char *header_filename, const char *source_fi
 	}
 }
 
-int main(int argc, const char **argv) {
-	if (argc < 1) {
-		printf("Usage: %s [clang_args...]\n", argv[0]);
-		return 1;
-	}
-
-	const char *const *command_line_args = argv + 1;
-	int num_command_line_args = argc - 1;
-
-	const char *filenames[] = {
-		"src/base/str",
-		"src/base/fs"
-	};
-
-	for(int i = 0; i < sizeof(filenames) / sizeof(const char *); i++) {
-		const char *base_filename = filenames[i];
-		char source_filename[512];
-		char header_filename[512];
-		snprintf(header_filename, sizeof(header_filename), "%s.h", base_filename);
-		snprintf(source_filename, sizeof(source_filename), "%s.cpp", base_filename);
-		ddl_check_src_and_header(source_filename, header_filename, command_line_args, num_command_line_args);
-	}
-
-	puts("OK");
-	return 0;
-}

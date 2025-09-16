@@ -3,14 +3,43 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Reads a specific line from a file (1-indexed)
+char* read_line(const char* filename, unsigned line_num) {
+	FILE* file = fopen(filename, "r");
+	if (!file) return NULL;
+	size_t bufsize = 4096;
+	char* buffer = malloc(bufsize);
+	unsigned current = 1;
+	while (fgets(buffer, bufsize, file)) {
+		if (current == line_num) {
+			fclose(file);
+			return buffer;
+		}
+		current++;
+	}
+	fclose(file);
+	free(buffer);
+	return NULL;
+}
+
 // Callback for visiting AST nodes
 enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
 	CXSourceLocation location = clang_getCursorLocation(cursor);
-	if (clang_Location_isFromMainFile(location) == 0)
+	if (!clang_Location_isFromMainFile(location))
 		return CXChildVisit_Recurse;
 
-	// Check if it's a floating literal
 	if (clang_getCursorKind(cursor) == CXCursor_FloatingLiteral) {
+		// Get line number and file
+		CXFile file;
+		unsigned line, column, offset;
+		clang_getExpansionLocation(location, &file, &line, &column, &offset);
+		CXString file_name_cx = clang_getFileName(file);
+		const char* file_name = clang_getCString(file_name_cx);
+
+		// Read the line from the file
+		char* code_line = read_line(file_name, line);
+
+		// Get float literal string
 		CXToken* tokens = NULL;
 		unsigned int numTokens = 0;
 		CXTranslationUnit tu = (CXTranslationUnit)client_data;
@@ -19,10 +48,16 @@ enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData c
 
 		for (unsigned int i = 0; i < numTokens; i++) {
 			CXString spelling = clang_getTokenSpelling(tu, tokens[i]);
-			printf("Float literal: %s\n", clang_getCString(spelling));
+			printf("Float literal: %s at %s:%u\n", clang_getCString(spelling), file_name, line);
+			if (code_line) {
+				printf("    Code line: %s", code_line);
+				if (code_line[strlen(code_line)-1] != '\n') printf("\n");
+				free(code_line);
+			}
 			clang_disposeString(spelling);
 		}
 		clang_disposeTokens(tu, tokens, numTokens);
+		clang_disposeString(file_name_cx);
 	}
 	return CXChildVisit_Recurse;
 }
@@ -33,9 +68,6 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	float meta = 4.20f;
-	float foo = 2.f;
-
 	CXIndex index = clang_createIndex(0, 0);
 	CXTranslationUnit tu = clang_parseTranslationUnit(
 		index, argv[1], NULL, 0, NULL, 0, CXTranslationUnit_None);
@@ -44,6 +76,9 @@ int main(int argc, char** argv) {
 		fprintf(stderr, "Failed to parse translation unit\n");
 		return 1;
 	}
+
+	float foo = 4.20f;
+	float bar = 4.2f;
 
 	CXCursor rootCursor = clang_getTranslationUnitCursor(tu);
 	clang_visitChildren(rootCursor, visitor, tu);

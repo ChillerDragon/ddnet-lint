@@ -1,3 +1,5 @@
+#include <clang-c/CXErrorCode.h>
+#include <clang-c/CXString.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,13 +71,36 @@ void ddl_get_funcs(const char *source_filename, const char *const *command_line_
 	int excludeDeclarationsFromPCH = 1;
 	int displayDiagnostics = 1;
 	CXIndex index = clang_createIndex(excludeDeclarationsFromPCH, displayDiagnostics);
-	CXTranslationUnit unit = clang_parseTranslationUnit(
+
+
+	CXTranslationUnit unit;
+	enum CXErrorCode code = clang_parseTranslationUnit2(
 		index,
 		source_filename,
 		command_line_args,
 		num_command_line_args,
 		NULL, 0,
-		CXTranslationUnit_None);
+		CXTranslationUnit_None,
+		&unit);
+
+	if (code != CXError_Success) {
+		fprintf(stderr, "Error unable to parse translation unit: %s error %d\n", source_filename, code);
+		exit(1);
+	}
+
+	unsigned int numErrors = clang_getNumDiagnostics(unit);
+	printf("parse code=%d errors=%d\n", code, numErrors);
+	if (numErrors) {
+		unsigned displayOptions = clang_defaultDiagnosticDisplayOptions();
+		for (unsigned i=0; i < numErrors; ++i) {
+			CXDiagnostic diag = clang_getDiagnostic(unit, i);
+			CXString str = clang_formatDiagnostic(diag, displayOptions);
+
+			fprintf(stderr, " %s", clang_getCString(str));
+			clang_disposeString(str);
+			clang_disposeDiagnostic(diag);
+		}
+	}
 
 	if (unit == NULL) {
 		fprintf(stderr, "Error unable to parse translation unit: %s\n", source_filename);

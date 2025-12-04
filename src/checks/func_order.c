@@ -103,7 +103,6 @@ void ddl_get_funcs(const char *const *command_line_args, int num_command_line_ar
 	}
 
 	unsigned int numErrors = clang_getNumDiagnostics(unit);
-	printf("parse code=%d errors=%d\n", code, numErrors);
 	if (numErrors) {
 		unsigned displayOptions = clang_defaultDiagnosticDisplayOptions();
 		for (unsigned i=0; i < numErrors; ++i) {
@@ -138,14 +137,17 @@ void ddl_check_src_and_header(const char *header_filename, const char *source_fi
 	ddl_get_funcs(command_line_args, num_command_line_args, &ctx_header);
 	ddl_get_funcs(command_line_args, num_command_line_args, &ctx_source);
 
-	printf("funcs in %s\n", header_filename);
-	ddl_print_funcs(&ctx_header);
-	printf("funcs in %s\n", source_filename);
-	ddl_print_funcs(&ctx_source);
+	// printf("funcs in %s\n", header_filename);
+	// ddl_print_funcs(&ctx_header);
+	// printf("funcs in %s\n", source_filename);
+	// ddl_print_funcs(&ctx_source);
 
 	if(!ddl_has_same_func_order(&ctx_header, &ctx_source)) {
 		fprintf(stderr, "Error files %s and %s do not have the same function order.\n", header_filename, source_filename);
 		exit(1);
+	} else {
+		printf("[+] functions match in %s,cpp .. OK\n", header_filename);
+		printf("[+]   functions found: %d\n", ctx_header.num_functions);
 	}
 }
 

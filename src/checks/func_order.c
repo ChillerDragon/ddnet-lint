@@ -66,7 +66,9 @@ enum CXChildVisitResult fetch_func_callback(CXCursor cursor, CXCursor parent, CX
 }
 
 void ddl_get_funcs(const char *source_filename, const char *const *command_line_args, int num_command_line_args, DDNetLintCtx *ctx) {
-	CXIndex index = clang_createIndex(0, 0);
+	int excludeDeclarationsFromPCH = 1;
+	int displayDiagnostics = 1;
+	CXIndex index = clang_createIndex(excludeDeclarationsFromPCH, displayDiagnostics);
 	CXTranslationUnit unit = clang_parseTranslationUnit(
 		index,
 		source_filename,

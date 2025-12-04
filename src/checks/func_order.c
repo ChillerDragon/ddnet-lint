@@ -58,16 +58,30 @@ enum CXChildVisitResult fetch_func_callback(CXCursor cursor, CXCursor parent, CX
 	}
 	if (clang_Cursor_getStorageClass(cursor) == CX_SC_Static) {
 		return CXChildVisit_Continue;
-        }
+	}
 
 	CXString name = clang_getCursorSpelling(cursor);
 	DDNetLintCtx *ctx = client_data;
-	ddl_push_func(ctx, clang_getCString(name));
+
+	// Get source location
+	CXSourceLocation location = clang_getCursorLocation(cursor);
+	// Translate location into file
+	CXFile file;
+	unsigned line, column;
+	clang_getSpellingLocation(location, &file, &line, &column, NULL);
+	CXString fileNameCX = clang_getFileName(file);
+	const char *fileName = clang_getCString(fileNameCX);
+	if(strcmp(fileName, ctx->filename)) {
+		// printf(" skip func from other header %s %s\n", clang_getCString(name), fileName);
+	} else {
+		ddl_push_func(ctx, clang_getCString(name));
+	}
 	clang_disposeString(name);
+	clang_disposeString(fileNameCX);
 	return CXChildVisit_Continue;
 }
 
-void ddl_get_funcs(const char *source_filename, const char *const *command_line_args, int num_command_line_args, DDNetLintCtx *ctx) {
+void ddl_get_funcs(const char *const *command_line_args, int num_command_line_args, DDNetLintCtx *ctx) {
 	int excludeDeclarationsFromPCH = 1;
 	int displayDiagnostics = 1;
 	CXIndex index = clang_createIndex(excludeDeclarationsFromPCH, displayDiagnostics);
@@ -76,7 +90,7 @@ void ddl_get_funcs(const char *source_filename, const char *const *command_line_
 	CXTranslationUnit unit;
 	enum CXErrorCode code = clang_parseTranslationUnit2(
 		index,
-		source_filename,
+		ctx->filename,
 		command_line_args,
 		num_command_line_args,
 		NULL, 0,
@@ -84,7 +98,7 @@ void ddl_get_funcs(const char *source_filename, const char *const *command_line_
 		&unit);
 
 	if (code != CXError_Success) {
-		fprintf(stderr, "Error unable to parse translation unit: %s error %d\n", source_filename, code);
+		fprintf(stderr, "Error unable to parse translation unit: %s error %d\n", ctx->filename, code);
 		exit(1);
 	}
 
@@ -103,7 +117,7 @@ void ddl_get_funcs(const char *source_filename, const char *const *command_line_
 	}
 
 	if (unit == NULL) {
-		fprintf(stderr, "Error unable to parse translation unit: %s\n", source_filename);
+		fprintf(stderr, "Error unable to parse translation unit: %s\n", ctx->filename);
 		exit(1);
 	}
 
@@ -114,16 +128,20 @@ void ddl_get_funcs(const char *source_filename, const char *const *command_line_
 }
 
 void ddl_check_src_and_header(const char *header_filename, const char *source_filename, const char *const *command_line_args, int num_command_line_args) {
-	DDNetLintCtx ctx_source = {};
-	DDNetLintCtx ctx_header = {};
+	DDNetLintCtx ctx_source = {
+		.filename = source_filename
+	};
+	DDNetLintCtx ctx_header = {
+		.filename = header_filename
+	};
 
-	ddl_get_funcs(header_filename, command_line_args, num_command_line_args, &ctx_header);
-	ddl_get_funcs(source_filename, command_line_args, num_command_line_args, &ctx_source);
+	ddl_get_funcs(command_line_args, num_command_line_args, &ctx_header);
+	ddl_get_funcs(command_line_args, num_command_line_args, &ctx_source);
 
-	// printf("funcs in %s\n", header_filename);
-	// ddl_print_funcs(&ctx_header);
-	// printf("funcs in %s\n", source_filename);
-	// ddl_print_funcs(&ctx_source);
+	printf("funcs in %s\n", header_filename);
+	ddl_print_funcs(&ctx_header);
+	printf("funcs in %s\n", source_filename);
+	ddl_print_funcs(&ctx_source);
 
 	if(!ddl_has_same_func_order(&ctx_header, &ctx_source)) {
 		fprintf(stderr, "Error files %s and %s do not have the same function order.\n", header_filename, source_filename);

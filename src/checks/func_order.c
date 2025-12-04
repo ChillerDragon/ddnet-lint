@@ -96,7 +96,7 @@ void ddl_get_funcs(const char *source_filename, const char *const *command_line_
 			CXDiagnostic diag = clang_getDiagnostic(unit, i);
 			CXString str = clang_formatDiagnostic(diag, displayOptions);
 
-			fprintf(stderr, " %s", clang_getCString(str));
+			fprintf(stderr, " %s\n", clang_getCString(str));
 			clang_disposeString(str);
 			clang_disposeDiagnostic(diag);
 		}

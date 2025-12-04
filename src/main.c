@@ -74,7 +74,8 @@ int main(int argc, const char **argv) {
 	const char *add_args[][512] = {
 		{},
 		{ "-DCONF_FAMILY_WINDOWS" },
-		{ "-DCONF_PLATFORM_MACOS" }
+		{ "-DCONF_PLATFORM_MACOS" },
+		{ "-DCONF_PLATFORM_LINUX" }
 	};
 	int num_add_arg_bundles = sizeof(add_args) / sizeof(add_args[0]);
 

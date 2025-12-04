@@ -15,6 +15,9 @@ int main(int argc, const char **argv) {
 	// int num_command_line_args = argc - 1;
 
 	const char *const cli_args[] = {
+		"-x",
+		"c++-header",
+		"-std=c++20"
 		// "-Isrc"
 	};
 	int num_cli_args = sizeof(cli_args) / sizeof(const char *);

@@ -14,7 +14,8 @@ int main(int argc, const char **argv) {
 
 	const char *filenames[] = {
 		"src/base/str",
-		"src/base/fs"
+		"src/base/fs",
+		"src/base/windows"
 	};
 
 	int errors = 0;

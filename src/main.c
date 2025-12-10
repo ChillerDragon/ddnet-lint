@@ -67,6 +67,7 @@ int main(int argc, const char **argv) {
 	const char *filenames[] = {
 		"src/base/str",
 		"src/base/fs",
+		"src/base/mem",
 		"src/base/windows"
 	};
 	int num_filenames = sizeof(filenames) / sizeof(const char *);

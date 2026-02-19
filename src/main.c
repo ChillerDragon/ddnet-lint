@@ -67,6 +67,7 @@ int main(int argc, const char **argv) {
 	const char *filenames[] = {
 		"src/base/str",
 		"src/base/fs",
+		"src/base/io",
 		"src/base/mem",
 		"src/base/secure",
 		"src/base/windows"
